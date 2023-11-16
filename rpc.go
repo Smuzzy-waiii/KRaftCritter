@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/raft"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -69,7 +70,13 @@ func (r rpcInterface) setValue(c *gin.Context) {
 		return
 	}
 
-	f := r.raft.Apply([]byte(fmt.Sprint(key, "|", val)), time.Second)
+	serData := []byte(fmt.Sprint(key, "|", val))
+	f := r.raft.ApplyLog(
+		raft.Log{
+			Data:       serData,
+			Extensions: []byte("KeyValue"),
+		},
+		time.Second)
 	if err := f.Error(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
@@ -82,6 +89,98 @@ func (r rpcInterface) setValue(c *gin.Context) {
 		"key":         key,
 		"value":       val,
 		"commitIndex": f.Index(),
+	})
+}
+
+func (r rpcInterface) RegisterBroker(c *gin.Context) {
+	broker := new(Broker)
+	err := c.Bind(broker)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+			"type":  "BindError",
+		})
+		return
+	}
+
+	if _, prs := r.fsm.brokers[broker.BrokerID]; prs {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "AlreadyExists",
+			"message": "Broker with same brokerID already exists",
+		})
+		return
+	}
+
+	serBroker, err := gobEncode(broker) // serialized broker
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+			"type":  "EncodingError",
+		})
+		return
+	}
+
+	f := r.raft.ApplyLog(raft.Log{Data: serBroker, Extensions: []byte("Broker")}, time.Second)
+	if err := f.Error(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	resp := f.Response().(ApplyRv)
+	if err := resp.Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":      "SUCCESS",
+		"message":     "Broker Created Successfully",
+		"commitIndex": f.Index(),
+	})
+}
+
+func (r rpcInterface) GetBrokers(c *gin.Context) {
+	brokerId := c.DefaultQuery("brokerId", "")
+	if brokerId == "" {
+		var brokers []Broker
+		for brokerId := range r.fsm.brokers {
+			broker := r.fsm.brokers[brokerId]
+			brokers = append(brokers, broker)
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "SUCCESS",
+			"brokers": brokers,
+		})
+	} else {
+		brokerIdInt, err := strconv.Atoi(brokerId)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err,
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"status": "SUCCESS",
+			"broker": r.fsm.brokers[brokerIdInt],
+		})
+	}
+}
+
+func (r rpcInterface) GetAllActiveBrokers(c *gin.Context) {
+	var brokers []Broker
+	for brokerId := range r.fsm.brokers {
+		if broker := r.fsm.brokers[brokerId]; broker.BrokerStatus == "Active" {
+			brokers = append(brokers, broker)
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status":        "SUCCESS",
+		"activeBrokers": brokers,
 	})
 }
 

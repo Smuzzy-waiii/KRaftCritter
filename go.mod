@@ -7,6 +7,7 @@ require (
 	github.com/Jille/raft-grpc-transport v1.4.0
 	github.com/Jille/raftadmin v1.2.1
 	github.com/gin-gonic/gin v1.9.1
+	github.com/google/uuid v1.3.1
 	github.com/hashicorp/raft v1.5.0
 	github.com/hashicorp/raft-boltdb v0.0.0-20230125174641-2a8082862702
 	google.golang.org/grpc v1.59.0
