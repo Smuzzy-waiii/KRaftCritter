@@ -117,12 +117,10 @@ func (r rpcInterface) RegisterBroker(c *gin.Context) {
 		return
 	}
 
-	strconv.Atoi(resp.MetaData["brokerID"])
-
 	c.JSON(http.StatusOK, gin.H{
 		"status":      "SUCCESS",
 		"message":     "Broker Created Successfully",
-		"brokerID":    broker.BrokerID,
+		"broker":      resp.MetaData["broker"].(Broker),
 		"commitIndex": f.Index(),
 	})
 }

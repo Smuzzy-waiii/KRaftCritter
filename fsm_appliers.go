@@ -24,18 +24,18 @@ func (fsm *DistMap) ApplyBrokerCreate(l *raft.Log) interface{} {
 	err := gobDecode[Broker](l.Data, &broker)
 	if err != nil {
 		return ApplyRv{
-			MetaData: map[string]string{"status": "ERROR"},
+			MetaData: map[string]any{"status": "ERROR"},
 			Error:    err,
 		}
 	}
 	broker.internalUUID = uuid.New().String()
-	broker.epoch = 0
+	broker.Epoch = 0
 	fsm.Brokers[broker.BrokerID] = broker
 
 	return ApplyRv{
-		MetaData: map[string]string{
-			"status":   "SUCCESS",
-			"brokerID": strconv.Itoa(broker.BrokerID)},
+		MetaData: map[string]any{
+			"status": "SUCCESS",
+			"broker": broker},
 		Error: nil,
 	}
 }
@@ -51,18 +51,18 @@ func (fsm *DistMap) ApplyBrokerReplace(l *raft.Log) interface{} {
 	err := gobDecode[Broker](l.Data, &broker)
 	if err != nil {
 		return ApplyRv{
-			MetaData: map[string]string{"status": "ERROR"},
+			MetaData: map[string]any{"status": "ERROR"},
 			Error:    err,
 		}
 	}
 
 	oldBroker := fsm.Brokers[broker.BrokerID] //caller ensures brokerID is valid and exists
 	broker.internalUUID = oldBroker.internalUUID
-	broker.epoch = oldBroker.epoch + 1
+	broker.Epoch = oldBroker.Epoch + 1
 	fsm.Brokers[oldBroker.BrokerID] = broker
 
 	return ApplyRv{
-		MetaData: map[string]string{
+		MetaData: map[string]any{
 			"status":   "SUCCESS",
 			"brokerID": strconv.Itoa(broker.BrokerID)},
 		Error: nil,

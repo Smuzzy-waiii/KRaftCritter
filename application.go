@@ -25,7 +25,7 @@ func (fsm *DistMap) InitIfNotInit() {
 }
 
 type ApplyRv struct {
-	MetaData map[string]string
+	MetaData map[string]any
 	Error    error
 }
 

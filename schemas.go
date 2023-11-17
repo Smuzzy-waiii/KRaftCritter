@@ -8,7 +8,7 @@ type Broker struct {
 	SecurityProtocol string `json:"securityProtocol"`
 	BrokerStatus     string `json:"brokerStatus"`
 	RackID           string `json:"rackID"`
-	epoch            int
+	Epoch            int    `json:"epoch"`
 }
 
 type Topic struct {
