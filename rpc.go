@@ -94,45 +94,26 @@ func (r rpcInterface) setValue(c *gin.Context) {
 
 func (r rpcInterface) RegisterBroker(c *gin.Context) {
 	broker := new(Broker)
-	err := c.Bind(broker)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-			"type":  "BindError",
-		})
+	if !BindMiddleware(c, broker) {
 		return
 	}
 
-	if _, prs := r.fsm.Brokers[broker.BrokerID]; prs {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "AlreadyExists",
-			"message": "Broker with same brokerID already exists",
-		})
+	if !r.CheckBrokerIdExistsInFSM(c, broker.BrokerID, false) {
 		return
 	}
 
 	serBroker, err := gobEncode(broker) // serialized broker
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-			"type":  "EncodingError",
-		})
+	if !HandleEncodingError(c, err) {
 		return
 	}
 
 	f := r.raft.ApplyLog(raft.Log{Data: serBroker, Extensions: []byte("Broker")}, time.Second)
-	if err := f.Error(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+	if err := f.Error(); !HandleApplyError(c, err) {
 		return
 	}
 
 	resp := f.Response().(ApplyRv)
-	if err := resp.Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+	if err := resp.Error; !HandleApplyRvError(c, err) {
 		return
 	}
 
@@ -146,39 +127,67 @@ func (r rpcInterface) RegisterBroker(c *gin.Context) {
 	})
 }
 
+func (r rpcInterface) ReplaceBroker(c *gin.Context) {
+	broker := Broker{BrokerID: -1}
+	if !BindMiddleware(c, &broker) {
+		return
+	}
+
+	brokerId := broker.BrokerID
+	if !CheckBrokerIdParamExists(c, brokerId == -1) {
+		return
+	}
+
+	if !CheckAllBrokerFieldsExist(c, broker) { //Does not check BrokerID
+		return
+	}
+
+	if !r.CheckBrokerIdExistsInFSM(c, brokerId, true) {
+		return
+	}
+
+	serBroker, err := gobEncode(broker) // serialized broker
+	if !HandleEncodingError(c, err) {
+		return
+	}
+
+	f := r.raft.ApplyLog(raft.Log{Data: serBroker, Extensions: []byte("ReplaceBroker")}, time.Second)
+	if err := f.Error(); !HandleApplyError(c, err) {
+		return
+	}
+
+	resp := f.Response().(ApplyRv)
+	if err := resp.Error; !HandleApplyError(c, err) {
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":      "SUCCESS",
+		"message":     "Broker Replaced Successfully",
+		"broker":      broker,
+		"commitIndex": f.Index(),
+	})
+}
+
 func (r rpcInterface) DeleteBroker(c *gin.Context) {
 	brokerId := c.DefaultQuery("brokerID", "")
-	if brokerId == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Specify brokerID",
-		})
+	if !CheckBrokerIdParamExists(c, brokerId == "") {
 		return
 	}
 
 	brokerIdInt, err := strconv.Atoi(brokerId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status": "InvalidBrokerId",
-			"error":  err,
-		})
+	if !HandleAtoiError(c, err) {
 		return
 	}
 
-	if _, prs := r.fsm.Brokers[brokerIdInt]; !prs {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "BrokerDoesNotExist",
-			"message": fmt.Sprintf("Broker with brokerID %d does not exist", brokerIdInt),
-		})
+	if !r.CheckBrokerIdExistsInFSM(c, brokerIdInt, true) {
 		return
 	}
 
 	serBrokerId := []byte(brokerId)
 
 	f := r.raft.ApplyLog(raft.Log{Data: serBrokerId, Extensions: []byte("DeleteBroker")}, time.Second)
-	if err := f.Error(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+	if err := f.Error(); !HandleApplyError(c, err) {
 		return
 	}
 
@@ -203,10 +212,11 @@ func (r rpcInterface) GetBrokers(c *gin.Context) {
 		})
 	} else {
 		brokerIdInt, err := strconv.Atoi(brokerId)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err,
-			})
+		if !HandleAtoiError(c, err) {
+			return
+		}
+
+		if !r.CheckBrokerIdExistsInFSM(c, brokerIdInt, true) {
 			return
 		}
 

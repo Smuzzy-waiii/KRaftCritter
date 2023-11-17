@@ -42,6 +42,9 @@ func (fsm *DistMap) Apply(l *raft.Log) interface{} {
 
 	case "DeleteBroker":
 		return fsm.ApplyBrokerDelete(l)
+
+	case "ReplaceBroker":
+		return fsm.ApplyBrokerReplace(l)
 	}
 	log.Fatalln("Log type not recognised")
 	return ApplyRv{}

@@ -45,3 +45,26 @@ func (fsm *DistMap) ApplyBrokerDelete(l *raft.Log) interface{} {
 	delete(fsm.Brokers, brokerID)
 	return nil
 }
+
+func (fsm *DistMap) ApplyBrokerReplace(l *raft.Log) interface{} {
+	broker := Broker{}
+	err := gobDecode[Broker](l.Data, &broker)
+	if err != nil {
+		return ApplyRv{
+			MetaData: map[string]string{"status": "ERROR"},
+			Error:    err,
+		}
+	}
+
+	oldBroker := fsm.Brokers[broker.BrokerID] //caller ensures brokerID is valid and exists
+	broker.internalUUID = oldBroker.internalUUID
+	broker.epoch = oldBroker.epoch + 1
+	fsm.Brokers[oldBroker.BrokerID] = broker
+
+	return ApplyRv{
+		MetaData: map[string]string{
+			"status":   "SUCCESS",
+			"brokerID": strconv.Itoa(broker.BrokerID)},
+		Error: nil,
+	}
+}
