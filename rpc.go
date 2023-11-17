@@ -17,7 +17,7 @@ type rpcInterface struct {
 
 func (r rpcInterface) getAll(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"data":        r.fsm.distMap,
+		"data":        r.fsm.DistMap,
 		"readAtIndex": r.raft.AppliedIndex(),
 	})
 }
@@ -32,7 +32,7 @@ func (r rpcInterface) getValue(c *gin.Context) {
 		return
 	}
 
-	val, prs := r.fsm.distMap[key]
+	val, prs := r.fsm.DistMap[key]
 	if !prs {
 		c.JSON(http.StatusOK, gin.H{
 			"status":      "ERR_NO_KEY",
@@ -103,7 +103,7 @@ func (r rpcInterface) RegisterBroker(c *gin.Context) {
 		return
 	}
 
-	if _, prs := r.fsm.brokers[broker.BrokerID]; prs {
+	if _, prs := r.fsm.Brokers[broker.BrokerID]; prs {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "AlreadyExists",
 			"message": "Broker with same brokerID already exists",
@@ -136,19 +136,65 @@ func (r rpcInterface) RegisterBroker(c *gin.Context) {
 		return
 	}
 
+	strconv.Atoi(resp.MetaData["brokerID"])
+
 	c.JSON(http.StatusOK, gin.H{
 		"status":      "SUCCESS",
 		"message":     "Broker Created Successfully",
+		"brokerID":    broker.BrokerID,
+		"commitIndex": f.Index(),
+	})
+}
+
+func (r rpcInterface) DeleteBroker(c *gin.Context) {
+	brokerId := c.DefaultQuery("brokerID", "")
+	if brokerId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Specify brokerID",
+		})
+		return
+	}
+
+	brokerIdInt, err := strconv.Atoi(brokerId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "InvalidBrokerId",
+			"error":  err,
+		})
+		return
+	}
+
+	if _, prs := r.fsm.Brokers[brokerIdInt]; !prs {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "BrokerDoesNotExist",
+			"message": fmt.Sprintf("Broker with brokerID %d does not exist", brokerIdInt),
+		})
+		return
+	}
+
+	serBrokerId := []byte(brokerId)
+
+	f := r.raft.ApplyLog(raft.Log{Data: serBrokerId, Extensions: []byte("DeleteBroker")}, time.Second)
+	if err := f.Error(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":      "SUCCESS",
+		"message":     "Broker Deleted Successfully",
 		"commitIndex": f.Index(),
 	})
 }
 
 func (r rpcInterface) GetBrokers(c *gin.Context) {
-	brokerId := c.DefaultQuery("brokerId", "")
+	brokerId := c.DefaultQuery("brokerID", "")
 	if brokerId == "" {
 		var brokers []Broker
-		for brokerId := range r.fsm.brokers {
-			broker := r.fsm.brokers[brokerId]
+		for brokerId := range r.fsm.Brokers {
+			broker := r.fsm.Brokers[brokerId]
 			brokers = append(brokers, broker)
 		}
 		c.JSON(http.StatusOK, gin.H{
@@ -166,15 +212,15 @@ func (r rpcInterface) GetBrokers(c *gin.Context) {
 
 		c.JSON(http.StatusOK, gin.H{
 			"status": "SUCCESS",
-			"broker": r.fsm.brokers[brokerIdInt],
+			"broker": r.fsm.Brokers[brokerIdInt],
 		})
 	}
 }
 
 func (r rpcInterface) GetAllActiveBrokers(c *gin.Context) {
 	var brokers []Broker
-	for brokerId := range r.fsm.brokers {
-		if broker := r.fsm.brokers[brokerId]; broker.BrokerStatus == "Active" {
+	for brokerId := range r.fsm.Brokers {
+		if broker := r.fsm.Brokers[brokerId]; broker.BrokerStatus == "Active" {
 			brokers = append(brokers, broker)
 		}
 	}

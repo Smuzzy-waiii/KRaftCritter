@@ -76,6 +76,7 @@ func main() {
 		router.POST("/brokers", rpc.RegisterBroker)
 		router.GET("/activeBrokers", rpc.GetAllActiveBrokers)
 		router.GET("/brokers", rpc.GetBrokers)
+		router.DELETE("/brokers", rpc.DeleteBroker)
 
 		host, httpPort, err := getHttpAddrFromGrpcAddr(*grpcAddr)
 		if err != nil {

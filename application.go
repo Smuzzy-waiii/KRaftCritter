@@ -10,17 +10,17 @@ import (
 
 // DistMap impl.  raft.FSM
 type DistMap struct {
-	distMap map[string]any
-	brokers map[int]Broker
+	DistMap map[string]any
+	Brokers map[int]Broker
 }
 
 func (fsm *DistMap) InitIfNotInit() {
-	if (*fsm).distMap == nil {
-		(*fsm).distMap = make(map[string]any)
+	if (*fsm).DistMap == nil {
+		(*fsm).DistMap = make(map[string]any)
 	}
 
-	if (*fsm).brokers == nil {
-		(*fsm).brokers = make(map[int]Broker)
+	if (*fsm).Brokers == nil {
+		(*fsm).Brokers = make(map[int]Broker)
 	}
 }
 
@@ -38,7 +38,10 @@ func (fsm *DistMap) Apply(l *raft.Log) interface{} {
 		return fsm.ApplyKVStore(l)
 
 	case "Broker":
-		return fsm.ApplyBroker(l)
+		return fsm.ApplyBrokerCreate(l)
+
+	case "DeleteBroker":
+		return fsm.ApplyBrokerDelete(l)
 	}
 	log.Fatalln("Log type not recognised")
 	return ApplyRv{}
@@ -46,12 +49,12 @@ func (fsm *DistMap) Apply(l *raft.Log) interface{} {
 
 func (fsm *DistMap) Snapshot() (raft.FSMSnapshot, error) {
 	distMapCopy := make(map[string]any)
-	for k := range fsm.distMap {
-		distMapCopy[k] = fsm.distMap[k]
+	for k := range fsm.DistMap {
+		distMapCopy[k] = fsm.DistMap[k]
 	}
 	brokerCopy := make(map[int]Broker)
-	for k := range fsm.brokers {
-		brokerCopy[k] = fsm.brokers[k]
+	for k := range fsm.Brokers {
+		brokerCopy[k] = fsm.Brokers[k]
 	}
 	return &snapshot{
 		distMapCopy,
@@ -61,7 +64,7 @@ func (fsm *DistMap) Snapshot() (raft.FSMSnapshot, error) {
 
 func (fsm *DistMap) Restore(r io.ReadCloser) error {
 	d := gob.NewDecoder(r)
-	err := d.Decode(&fsm.distMap)
+	err := d.Decode(&fsm)
 	if err != nil {
 		return err
 	}
@@ -69,13 +72,13 @@ func (fsm *DistMap) Restore(r io.ReadCloser) error {
 }
 
 type snapshot struct {
-	distMap map[string]any
-	brokers map[int]Broker
+	DistMap map[string]any
+	Brokers map[int]Broker
 }
 
 func (s *snapshot) Persist(sink raft.SnapshotSink) error {
 	encoder := gob.NewEncoder(sink)
-	err := encoder.Encode(s.distMap)
+	err := encoder.Encode(s)
 	if err != nil {
 		sink.Cancel()
 		return fmt.Errorf("sink.Write(): %v", err)
