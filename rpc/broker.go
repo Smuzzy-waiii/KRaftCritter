@@ -50,7 +50,7 @@ func (r RpcInterface) ReplaceBroker(c *gin.Context) {
 	}
 
 	brokerId := broker.BrokerID
-	if !CheckBrokerIdParamExists(c, brokerId == -1) {
+	if !CheckParamExists(c, brokerId == -1, "brokerID") {
 		return
 	}
 
@@ -85,9 +85,11 @@ func (r RpcInterface) ReplaceBroker(c *gin.Context) {
 	})
 }
 
+//TODO: Add PatchBroker Endpoint
+
 func (r RpcInterface) DeleteBroker(c *gin.Context) {
 	brokerId := c.DefaultQuery("brokerID", "")
-	if !CheckBrokerIdParamExists(c, brokerId == "") {
+	if !CheckParamExists(c, brokerId == "", "brokerID") {
 		return
 	}
 

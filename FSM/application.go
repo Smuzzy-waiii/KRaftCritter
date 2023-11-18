@@ -11,11 +11,17 @@ import (
 // DistMap impl.  raft.FSM
 type DistMap struct {
 	Brokers map[int]Broker
+	Topics  Topics
 }
 
 func (fsm *DistMap) InitIfNotInit() {
 	if (*fsm).Brokers == nil {
 		(*fsm).Brokers = make(map[int]Broker)
+	}
+
+	if (*fsm).Topics.TopicMap == nil {
+		(*fsm).Topics.TopicMap = make(map[string]Topic)
+		(*fsm).Topics.Offset = 0
 	}
 }
 
@@ -38,6 +44,9 @@ func (fsm *DistMap) Apply(l *raft.Log) interface{} {
 
 	case "ReplaceBroker":
 		return fsm.ApplyBrokerReplace(l)
+
+	case "Topic":
+		return fsm.ApplyTopicCreate(l)
 	}
 	log.Fatalln("Log type not recognised")
 	return ApplyRv{}

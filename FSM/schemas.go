@@ -13,7 +13,7 @@ type Broker struct {
 
 type Topic struct {
 	topicUUID string
-	name      string
+	Name      string `json:"name"`
 }
 
 type Partition struct {
@@ -31,4 +31,9 @@ type ProducerID struct {
 	brokerID    string
 	brokerEpoch int
 	producerID  int
+}
+
+type Topics struct {
+	TopicMap map[string]Topic
+	Offset   int
 }

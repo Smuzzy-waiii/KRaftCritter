@@ -71,10 +71,29 @@ func (r RpcInterface) CheckBrokerIdExistsInFSM(c *gin.Context, brokerID int, sho
 	}
 }
 
-func CheckBrokerIdParamExists(c *gin.Context, doesNotExist bool) bool {
+func (r RpcInterface) CheckTopicExistsInFSM(c *gin.Context, topicName string, shouldExist bool) bool {
+	_, prs := r.Fsm.Topics.TopicMap[topicName]
+	if !shouldExist && prs {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "AlreadyExists",
+			"message": fmt.Sprintf("Topic %s already exists", topicName),
+		})
+		return false
+	} else if shouldExist && !prs {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "BrokerDoesNotExist",
+			"message": fmt.Sprintf("Topic %s does not exist", topicName),
+		})
+		return false
+	} else {
+		return true
+	}
+}
+
+func CheckParamExists(c *gin.Context, doesNotExist bool, paramName string) bool {
 	if doesNotExist {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Specify brokerID",
+			"error": "Specify " + paramName,
 		})
 		return false
 	}
@@ -98,7 +117,7 @@ func CheckAllBrokerFieldsExist(c *gin.Context, broker FSM.Broker) bool {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":         "IncompleteBroker",
 			"message":        "All Broker fields required",
-			"recievedBroker": broker,
+			"receivedBroker": broker,
 			"brokerSchema":   FSM.Broker{},
 		})
 		return false

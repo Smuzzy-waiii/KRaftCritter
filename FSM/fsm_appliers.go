@@ -56,3 +56,15 @@ func (fsm *DistMap) ApplyBrokerReplace(l *raft.Log) interface{} {
 		Error: nil,
 	}
 }
+
+func (fsm *DistMap) ApplyTopicCreate(l *raft.Log) interface{} {
+	topicName := string(l.Data)
+	newTopic := Topic{
+		Name:      topicName,
+		topicUUID: uuid.New().String(),
+	}
+	fsm.Topics.TopicMap[topicName] = newTopic
+	fsm.Topics.Offset += 1
+
+	return fsm.Topics.Offset
+}
