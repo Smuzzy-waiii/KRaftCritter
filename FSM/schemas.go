@@ -17,14 +17,14 @@ type Topic struct {
 }
 
 type Partition struct {
-	partitionID      int
-	topicUUID        string
-	replicas         []int
-	ISR              []int
-	removingReplicas []int
-	addingReplicas   []int
-	leader           string
-	partitionEpoch   int
+	PartitionID      int    `json:"partitionId"`
+	TopicUUID        string `json:"topicUUID"`
+	Replicas         []int  `json:"replicas"`
+	ISR              []int  `json:"ISR"`
+	RemovingReplicas []int  `json:"removingReplicas"`
+	AddingReplicas   []int  `json:"addingReplicas"`
+	Leader           string `json:"leader"`
+	PartitionEpoch   int    `json:"partitionEpoch"`
 }
 
 type ProducerID struct {
