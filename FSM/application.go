@@ -10,15 +10,10 @@ import (
 
 // DistMap impl.  raft.FSM
 type DistMap struct {
-	DistMap map[string]any
 	Brokers map[int]Broker
 }
 
 func (fsm *DistMap) InitIfNotInit() {
-	if (*fsm).DistMap == nil {
-		(*fsm).DistMap = make(map[string]any)
-	}
-
 	if (*fsm).Brokers == nil {
 		(*fsm).Brokers = make(map[int]Broker)
 	}
@@ -34,8 +29,6 @@ func (fsm *DistMap) Apply(l *raft.Log) interface{} {
 
 	logType := string(l.Extensions)
 	switch logType {
-	case "KeyValue":
-		return fsm.ApplyKVStore(l)
 
 	case "Broker":
 		return fsm.ApplyBrokerCreate(l)
@@ -51,16 +44,11 @@ func (fsm *DistMap) Apply(l *raft.Log) interface{} {
 }
 
 func (fsm *DistMap) Snapshot() (raft.FSMSnapshot, error) {
-	distMapCopy := make(map[string]any)
-	for k := range fsm.DistMap {
-		distMapCopy[k] = fsm.DistMap[k]
-	}
 	brokerCopy := make(map[int]Broker)
 	for k := range fsm.Brokers {
 		brokerCopy[k] = fsm.Brokers[k]
 	}
 	return &snapshot{
-		distMapCopy,
 		brokerCopy,
 	}, nil
 }
@@ -75,7 +63,6 @@ func (fsm *DistMap) Restore(r io.ReadCloser) error {
 }
 
 type snapshot struct {
-	DistMap map[string]any
 	Brokers map[int]Broker
 }
 

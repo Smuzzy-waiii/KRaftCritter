@@ -73,9 +73,6 @@ func main() {
 		router := gin.Default()
 		router.Use(rpc.RedirectLeader())
 
-		router.GET("/getValue", rpc.GetValue)
-		router.GET("/getAll", rpc.GetAll)
-		router.POST("/setValue", rpc.SetValue)
 		router.POST("/brokers", rpc.RegisterBroker)
 		router.GET("/activeBrokers", rpc.GetAllActiveBrokers)
 		router.GET("/brokers", rpc.GetBrokers)
