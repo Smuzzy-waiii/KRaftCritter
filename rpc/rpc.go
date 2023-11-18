@@ -1,6 +1,8 @@
-package main
+package rpc
 
 import (
+	"YAKT/FSM"
+	"YAKT/helpers"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/raft"
@@ -10,36 +12,36 @@ import (
 	"time"
 )
 
-type rpcInterface struct {
-	fsm  *DistMap
-	raft *raft.Raft
+type RpcInterface struct {
+	Fsm  *FSM.DistMap
+	Raft *raft.Raft
 }
 
-func (r rpcInterface) getAll(c *gin.Context) {
+func (r RpcInterface) GetAll(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"data":        r.fsm.DistMap,
-		"readAtIndex": r.raft.AppliedIndex(),
+		"data":        r.Fsm.DistMap,
+		"readAtIndex": r.Raft.AppliedIndex(),
 	})
 }
 
-func (r rpcInterface) getValue(c *gin.Context) {
+func (r RpcInterface) GetValue(c *gin.Context) {
 	key := c.DefaultQuery("key", "")
 	if key == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":       "Specify Key",
-			"readAtIndex": r.raft.AppliedIndex(),
+			"readAtIndex": r.Raft.AppliedIndex(),
 		})
 		return
 	}
 
-	val, prs := r.fsm.DistMap[key]
+	val, prs := r.Fsm.DistMap[key]
 	if !prs {
 		c.JSON(http.StatusOK, gin.H{
 			"status":      "ERR_NO_KEY",
 			"message":     "Key not present",
 			"key":         key,
 			"value":       nil,
-			"readAtIndex": r.raft.AppliedIndex(),
+			"readAtIndex": r.Raft.AppliedIndex(),
 		})
 		return
 	}
@@ -49,11 +51,11 @@ func (r rpcInterface) getValue(c *gin.Context) {
 		"message":     "Key found!",
 		"key":         key,
 		"value":       val,
-		"readAtIndex": r.raft.AppliedIndex(),
+		"readAtIndex": r.Raft.AppliedIndex(),
 	})
 }
 
-func (r rpcInterface) setValue(c *gin.Context) {
+func (r RpcInterface) SetValue(c *gin.Context) {
 	key := c.DefaultQuery("key", "")
 	if key == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -71,7 +73,7 @@ func (r rpcInterface) setValue(c *gin.Context) {
 	}
 
 	serData := []byte(fmt.Sprint(key, "|", val))
-	f := r.raft.ApplyLog(
+	f := r.Raft.ApplyLog(
 		raft.Log{
 			Data:       serData,
 			Extensions: []byte("KeyValue"),
@@ -92,8 +94,8 @@ func (r rpcInterface) setValue(c *gin.Context) {
 	})
 }
 
-func (r rpcInterface) RegisterBroker(c *gin.Context) {
-	broker := new(Broker)
+func (r RpcInterface) RegisterBroker(c *gin.Context) {
+	broker := new(FSM.Broker)
 	if !BindMiddleware(c, broker) {
 		return
 	}
@@ -102,17 +104,17 @@ func (r rpcInterface) RegisterBroker(c *gin.Context) {
 		return
 	}
 
-	serBroker, err := gobEncode(broker) // serialized broker
+	serBroker, err := helpers.GobEncode(broker) // serialized broker
 	if !HandleEncodingError(c, err) {
 		return
 	}
 
-	f := r.raft.ApplyLog(raft.Log{Data: serBroker, Extensions: []byte("Broker")}, time.Second)
+	f := r.Raft.ApplyLog(raft.Log{Data: serBroker, Extensions: []byte("Broker")}, time.Second)
 	if err := f.Error(); !HandleApplyError(c, err) {
 		return
 	}
 
-	resp := f.Response().(ApplyRv)
+	resp := f.Response().(FSM.ApplyRv)
 	if err := resp.Error; !HandleApplyRvError(c, err) {
 		return
 	}
@@ -120,13 +122,13 @@ func (r rpcInterface) RegisterBroker(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":      "SUCCESS",
 		"message":     "Broker Created Successfully",
-		"broker":      resp.MetaData["broker"].(Broker),
+		"broker":      resp.MetaData["broker"].(FSM.Broker),
 		"commitIndex": f.Index(),
 	})
 }
 
-func (r rpcInterface) ReplaceBroker(c *gin.Context) {
-	broker := Broker{BrokerID: -1}
+func (r RpcInterface) ReplaceBroker(c *gin.Context) {
+	broker := FSM.Broker{BrokerID: -1}
 	if !BindMiddleware(c, &broker) {
 		return
 	}
@@ -144,17 +146,17 @@ func (r rpcInterface) ReplaceBroker(c *gin.Context) {
 		return
 	}
 
-	serBroker, err := gobEncode(broker) // serialized broker
+	serBroker, err := helpers.GobEncode(broker) // serialized broker
 	if !HandleEncodingError(c, err) {
 		return
 	}
 
-	f := r.raft.ApplyLog(raft.Log{Data: serBroker, Extensions: []byte("ReplaceBroker")}, time.Second)
+	f := r.Raft.ApplyLog(raft.Log{Data: serBroker, Extensions: []byte("ReplaceBroker")}, time.Second)
 	if err := f.Error(); !HandleApplyError(c, err) {
 		return
 	}
 
-	resp := f.Response().(ApplyRv)
+	resp := f.Response().(FSM.ApplyRv)
 	if err := resp.Error; !HandleApplyError(c, err) {
 		return
 	}
@@ -167,7 +169,7 @@ func (r rpcInterface) ReplaceBroker(c *gin.Context) {
 	})
 }
 
-func (r rpcInterface) DeleteBroker(c *gin.Context) {
+func (r RpcInterface) DeleteBroker(c *gin.Context) {
 	brokerId := c.DefaultQuery("brokerID", "")
 	if !CheckBrokerIdParamExists(c, brokerId == "") {
 		return
@@ -184,7 +186,7 @@ func (r rpcInterface) DeleteBroker(c *gin.Context) {
 
 	serBrokerId := []byte(brokerId)
 
-	f := r.raft.ApplyLog(raft.Log{Data: serBrokerId, Extensions: []byte("DeleteBroker")}, time.Second)
+	f := r.Raft.ApplyLog(raft.Log{Data: serBrokerId, Extensions: []byte("DeleteBroker")}, time.Second)
 	if err := f.Error(); !HandleApplyError(c, err) {
 		return
 	}
@@ -196,12 +198,12 @@ func (r rpcInterface) DeleteBroker(c *gin.Context) {
 	})
 }
 
-func (r rpcInterface) GetBrokers(c *gin.Context) {
+func (r RpcInterface) GetBrokers(c *gin.Context) {
 	brokerId := c.DefaultQuery("brokerID", "")
 	if brokerId == "" {
-		var brokers []Broker
-		for brokerId := range r.fsm.Brokers {
-			broker := r.fsm.Brokers[brokerId]
+		var brokers []FSM.Broker
+		for brokerId := range r.Fsm.Brokers {
+			broker := r.Fsm.Brokers[brokerId]
 			brokers = append(brokers, broker)
 		}
 		c.JSON(http.StatusOK, gin.H{
@@ -220,15 +222,15 @@ func (r rpcInterface) GetBrokers(c *gin.Context) {
 
 		c.JSON(http.StatusOK, gin.H{
 			"status": "SUCCESS",
-			"broker": r.fsm.Brokers[brokerIdInt],
+			"broker": r.Fsm.Brokers[brokerIdInt],
 		})
 	}
 }
 
-func (r rpcInterface) GetAllActiveBrokers(c *gin.Context) {
-	var brokers []Broker
-	for brokerId := range r.fsm.Brokers {
-		if broker := r.fsm.Brokers[brokerId]; broker.BrokerStatus == "Active" {
+func (r RpcInterface) GetAllActiveBrokers(c *gin.Context) {
+	var brokers []FSM.Broker
+	for brokerId := range r.Fsm.Brokers {
+		if broker := r.Fsm.Brokers[brokerId]; broker.BrokerStatus == "Active" {
 			brokers = append(brokers, broker)
 		}
 	}
@@ -238,9 +240,9 @@ func (r rpcInterface) GetAllActiveBrokers(c *gin.Context) {
 	})
 }
 
-func (r rpcInterface) RedirectLeader() gin.HandlerFunc {
+func (r RpcInterface) RedirectLeader() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		curr_leader_serv_addr, _ := r.raft.LeaderWithID()
+		curr_leader_serv_addr, _ := r.Raft.LeaderWithID()
 		curr_leader_addr := string(curr_leader_serv_addr)
 
 		if curr_leader_addr == "" {
@@ -251,7 +253,7 @@ func (r rpcInterface) RedirectLeader() gin.HandlerFunc {
 			return
 		}
 
-		leaderHost, leaderHttpPort, err := getHttpAddrFromGrpcAddr(curr_leader_addr)
+		leaderHost, leaderHttpPort, err := helpers.GetHttpAddrFromGrpcAddr(curr_leader_addr)
 		if err != nil {
 			log.Fatalf("failed to parse leader address (%q): %v", curr_leader_addr, err)
 		}

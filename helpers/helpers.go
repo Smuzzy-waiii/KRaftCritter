@@ -1,4 +1,4 @@
-package main
+package helpers
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func getHttpAddrFromGrpcAddr(grpcAddr string) (host string, httpPort string, err error) {
+func GetHttpAddrFromGrpcAddr(grpcAddr string) (host string, httpPort string, err error) {
 	host, grpcPort, err := net.SplitHostPort(grpcAddr)
 	if err != nil {
 		return "", "", err
@@ -21,7 +21,7 @@ func getHttpAddrFromGrpcAddr(grpcAddr string) (host string, httpPort string, err
 	return host, httpPort, nil
 }
 
-func gobEncode(obj any) ([]byte, error) {
+func GobEncode(obj any) ([]byte, error) {
 	b := new(bytes.Buffer)
 	e := gob.NewEncoder(b)
 	err := e.Encode(obj)
@@ -31,7 +31,7 @@ func gobEncode(obj any) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-func gobDecode[T interface{}](data []byte, dict *T) error {
+func GobDecode[T interface{}](data []byte, dict *T) error {
 	b := bytes.NewBuffer(data)
 	d := gob.NewDecoder(b)
 	err := d.Decode(dict)

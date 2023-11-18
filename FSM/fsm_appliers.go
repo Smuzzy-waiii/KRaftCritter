@@ -1,6 +1,7 @@
-package main
+package FSM
 
 import (
+	"YAKT/helpers"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/raft"
@@ -21,7 +22,7 @@ func (fsm *DistMap) ApplyKVStore(l *raft.Log) interface{} {
 
 func (fsm *DistMap) ApplyBrokerCreate(l *raft.Log) interface{} {
 	broker := Broker{}
-	err := gobDecode[Broker](l.Data, &broker)
+	err := helpers.GobDecode[Broker](l.Data, &broker)
 	if err != nil {
 		return ApplyRv{
 			MetaData: map[string]any{"status": "ERROR"},
@@ -48,7 +49,7 @@ func (fsm *DistMap) ApplyBrokerDelete(l *raft.Log) interface{} {
 
 func (fsm *DistMap) ApplyBrokerReplace(l *raft.Log) interface{} {
 	broker := Broker{}
-	err := gobDecode[Broker](l.Data, &broker)
+	err := helpers.GobDecode[Broker](l.Data, &broker)
 	if err != nil {
 		return ApplyRv{
 			MetaData: map[string]any{"status": "ERROR"},

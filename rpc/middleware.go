@@ -1,6 +1,7 @@
-package main
+package rpc
 
 import (
+	"YAKT/FSM"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -51,8 +52,8 @@ func HandleApplyRvError(c *gin.Context, err error) bool {
 	return true
 }
 
-func (r rpcInterface) CheckBrokerIdExistsInFSM(c *gin.Context, brokerID int, shouldExist bool) bool {
-	_, prs := r.fsm.Brokers[brokerID]
+func (r RpcInterface) CheckBrokerIdExistsInFSM(c *gin.Context, brokerID int, shouldExist bool) bool {
+	_, prs := r.Fsm.Brokers[brokerID]
 	if !shouldExist && prs {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "AlreadyExists",
@@ -91,14 +92,14 @@ func HandleAtoiError(c *gin.Context, err error) bool {
 	return true
 }
 
-func CheckAllBrokerFieldsExist(c *gin.Context, broker Broker) bool {
+func CheckAllBrokerFieldsExist(c *gin.Context, broker FSM.Broker) bool {
 	switch "" {
 	case broker.BrokerStatus, broker.BrokerHost, broker.BrokerPort, broker.SecurityProtocol, broker.SecurityProtocol:
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":         "IncompleteBroker",
 			"message":        "All Broker fields required",
 			"recievedBroker": broker,
-			"brokerSchema":   Broker{},
+			"brokerSchema":   FSM.Broker{},
 		})
 		return false
 	}

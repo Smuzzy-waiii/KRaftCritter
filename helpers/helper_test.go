@@ -1,6 +1,8 @@
-package main
+package helpers
 
-import "testing"
+import (
+	"testing"
+)
 
 type addrParseConvTest struct {
 	grpcAddr string
@@ -15,7 +17,7 @@ var addrParseConvTests = []addrParseConvTest{
 
 func TestGetHttpAddrFromGrpcAddr(t *testing.T) {
 	for _, test := range addrParseConvTests {
-		host, httpPort, err := getHttpAddrFromGrpcAddr(test.grpcAddr)
+		host, httpPort, err := GetHttpAddrFromGrpcAddr(test.grpcAddr)
 		if host != test.host || httpPort != test.httpPort || err != test.err {
 			t.Errorf(
 				"grpcAddr='%s'\nExpected - host=%s, port=%s, err=%v\nGot - host=%s, port=%s, err=%v",

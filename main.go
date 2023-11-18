@@ -1,6 +1,9 @@
 package main
 
 import (
+	"YAKT/FSM"
+	"YAKT/helpers"
+	rpc2 "YAKT/rpc"
 	"context"
 	"flag"
 	"fmt"
@@ -43,7 +46,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	fsm := &DistMap{}
+	fsm := &FSM.DistMap{}
 
 	r, tm, err := NewRaft(ctx, *raftId, *grpcAddr, fsm)
 	if err != nil {
@@ -65,22 +68,21 @@ func main() {
 
 	//Running HTTP Server
 	go func() {
-		rpc := rpcInterface{raft: r, fsm: fsm}
+		rpc := rpc2.RpcInterface{Raft: r, Fsm: fsm}
 
 		router := gin.Default()
 		router.Use(rpc.RedirectLeader())
 
-		router.GET("/getValue", rpc.getValue)
-		router.GET("/getAll", rpc.getAll)
-		router.POST("/setValue", rpc.setValue)
+		router.GET("/getValue", rpc.GetValue)
+		router.GET("/getAll", rpc.GetAll)
+		router.POST("/setValue", rpc.SetValue)
 		router.POST("/brokers", rpc.RegisterBroker)
 		router.GET("/activeBrokers", rpc.GetAllActiveBrokers)
 		router.GET("/brokers", rpc.GetBrokers)
 		router.DELETE("/brokers", rpc.DeleteBroker)
 		router.PUT("/brokers", rpc.ReplaceBroker)
-		router.PUT("/test", rpc.TestEndpoint)
 
-		host, httpPort, err := getHttpAddrFromGrpcAddr(*grpcAddr)
+		host, httpPort, err := helpers.GetHttpAddrFromGrpcAddr(*grpcAddr)
 		if err != nil {
 			log.Fatalf("failed to parse local address (%q): %v", *grpcAddr, err)
 		}

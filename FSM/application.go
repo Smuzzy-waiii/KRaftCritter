@@ -1,4 +1,4 @@
-package main
+package FSM
 
 import (
 	"encoding/gob"

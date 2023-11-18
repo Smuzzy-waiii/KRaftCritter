@@ -1,4 +1,4 @@
-package main
+package FSM
 
 type Broker struct {
 	internalUUID     string
