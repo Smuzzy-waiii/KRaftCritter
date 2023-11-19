@@ -81,7 +81,7 @@ func (r RpcInterface) CheckTopicExistsInFSM(c *gin.Context, topicName string, sh
 		return false
 	} else if shouldExist && !prs {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "BrokerDoesNotExist",
+			"status":  "TopicDoesNotExist",
 			"message": fmt.Sprintf("Topic %s does not exist", topicName),
 		})
 		return false
