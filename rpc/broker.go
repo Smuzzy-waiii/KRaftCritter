@@ -94,7 +94,7 @@ func (r RpcInterface) DeleteBroker(c *gin.Context) {
 	}
 
 	brokerIdInt, err := strconv.Atoi(brokerId)
-	if !HandleAtoiError(c, err) {
+	if !HandleBrokerIdAtoiError(c, err) {
 		return
 	}
 
@@ -130,7 +130,7 @@ func (r RpcInterface) GetBrokers(c *gin.Context) {
 		})
 	} else {
 		brokerIdInt, err := strconv.Atoi(brokerId)
-		if !HandleAtoiError(c, err) {
+		if !HandleBrokerIdAtoiError(c, err) {
 			return
 		}
 

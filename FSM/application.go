@@ -10,8 +10,9 @@ import (
 
 // DistMap impl.  raft.FSM
 type DistMap struct {
-	Brokers map[int]Broker
-	Topics  Topics
+	Brokers   map[int]Broker
+	Topics    Topics
+	Producers []Producer
 }
 
 func (fsm *DistMap) InitIfNotInit() {
@@ -47,6 +48,9 @@ func (fsm *DistMap) Apply(l *raft.Log) interface{} {
 
 	case "Topic":
 		return fsm.ApplyTopicCreate(l)
+
+	case "Producer":
+		return fsm.ApplyProducerCreate(l)
 	}
 	log.Fatalln("Log type not recognised")
 	return ApplyRv{}

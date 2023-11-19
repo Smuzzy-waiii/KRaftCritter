@@ -100,10 +100,21 @@ func CheckParamExists(c *gin.Context, doesNotExist bool, paramName string) bool 
 	return true
 }
 
-func HandleAtoiError(c *gin.Context, err error) bool {
+func HandleBrokerIdAtoiError(c *gin.Context, err error) bool {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status": "InvalidBrokerId",
+			"error":  err,
+		})
+		return false
+	}
+	return true
+}
+
+func HandleProducerIdAtoiError(c *gin.Context, err error) bool {
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "InvalidProducerId",
 			"error":  err,
 		})
 		return false

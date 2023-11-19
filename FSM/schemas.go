@@ -27,10 +27,10 @@ type Partition struct {
 	partitionEpoch   int
 }
 
-type ProducerID struct {
-	brokerID    string
-	brokerEpoch int
-	producerID  int
+type Producer struct {
+	BrokerUUID  string
+	BrokerEpoch int
+	ProducerID  int
 }
 
 type Topics struct {
