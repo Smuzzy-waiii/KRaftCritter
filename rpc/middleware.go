@@ -122,6 +122,17 @@ func HandleProducerIdAtoiError(c *gin.Context, err error) bool {
 	return true
 }
 
+func HandleTimeAtoiError(c *gin.Context, err error) bool {
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "InvalidPrevLogicalTime",
+			"error":  err,
+		})
+		return false
+	}
+	return true
+}
+
 func CheckAllBrokerFieldsExist(c *gin.Context, broker FSM.Broker) bool {
 	switch "" {
 	case broker.BrokerStatus, broker.BrokerHost, broker.BrokerPort, broker.SecurityProtocol, broker.SecurityProtocol:
