@@ -37,3 +37,7 @@ type Topics struct {
 	TopicMap map[string]Topic
 	Offset   int
 }
+
+type Partitions struct {
+	PartitionMap map[int]Partition
+}
