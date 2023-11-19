@@ -9,11 +9,13 @@ type Broker struct {
 	BrokerStatus     string `json:"brokerStatus"`
 	RackID           string `json:"rackID"`
 	Epoch            int    `json:"epoch"`
+	LogicalTime      int
 }
 
 type Topic struct {
-	topicUUID string
-	Name      string `json:"name"`
+	topicUUID   string
+	Name        string `json:"name"`
+	LogicalTime int
 }
 
 type Partition struct {
@@ -31,6 +33,7 @@ type Producer struct {
 	BrokerUUID  string
 	BrokerEpoch int
 	ProducerID  int
+	LogicalTime int
 }
 
 type Topics struct {

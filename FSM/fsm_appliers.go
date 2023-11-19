@@ -20,9 +20,11 @@ func (fsm *DistMap) ApplyBrokerCreate(l *raft.Log) interface{} {
 	}
 	broker.internalUUID = uuid.New().String()
 	broker.Epoch = 0
+	broker.LogicalTime = fsm.logicalClock + 1
 	fsm.Brokers[broker.BrokerID] = broker
 	log.Printf("[INFO][BROKER][CREATE] Created Broker %+v\n", broker)
 
+	fsm.logicalClock++
 	return ApplyRv{
 		MetaData: map[string]any{
 			"status": "SUCCESS",
@@ -35,6 +37,7 @@ func (fsm *DistMap) ApplyBrokerDelete(l *raft.Log) interface{} {
 	brokerID, _ := strconv.Atoi(string(l.Data)) //caller ensures valid brokerID
 	delete(fsm.Brokers, brokerID)
 	log.Printf("[INFO][BROKER][DELETE] Deleted Broker with brokerID %d\n", brokerID)
+	fsm.logicalClock++
 	return nil
 }
 
@@ -51,13 +54,16 @@ func (fsm *DistMap) ApplyBrokerReplace(l *raft.Log) interface{} {
 	oldBroker := fsm.Brokers[broker.BrokerID] //caller ensures brokerID is valid and exists
 	broker.internalUUID = oldBroker.internalUUID
 	broker.Epoch = oldBroker.Epoch + 1
+	broker.LogicalTime = fsm.logicalClock + 1
 	fsm.Brokers[oldBroker.BrokerID] = broker
 	log.Printf("[INFO][BROKER][REPLACE] Replace Broker %+v with %+v\n", oldBroker, broker)
 
+	fsm.logicalClock++
 	return ApplyRv{
 		MetaData: map[string]any{
 			"status":   "SUCCESS",
-			"brokerID": strconv.Itoa(broker.BrokerID)},
+			"brokerID": strconv.Itoa(broker.BrokerID),
+		},
 		Error: nil,
 	}
 }
@@ -65,14 +71,16 @@ func (fsm *DistMap) ApplyBrokerReplace(l *raft.Log) interface{} {
 func (fsm *DistMap) ApplyTopicCreate(l *raft.Log) interface{} {
 	topicName := string(l.Data)
 	newTopic := Topic{
-		Name:      topicName,
-		topicUUID: uuid.New().String(),
+		Name:        topicName,
+		topicUUID:   uuid.New().String(),
+		LogicalTime: fsm.logicalClock + 1,
 	}
 	fsm.Topics.TopicMap[topicName] = newTopic
 	fsm.Topics.Offset += 1
 	log.Printf("[INFO][TOPIC][CREATE] Create Topic %s", topicName)
 
-	return fsm.Topics.Offset
+	fsm.logicalClock++
+	return fsm.logicalClock
 }
 
 func (fsm *DistMap) ApplyProducerCreate(l *raft.Log) interface{} {
@@ -101,11 +109,13 @@ func (fsm *DistMap) ApplyProducerCreate(l *raft.Log) interface{} {
 		brokerUUID,
 		brokerEpoch,
 		producerId,
+		fsm.logicalClock + 1,
 	}
 
 	fsm.Producers = append(fsm.Producers, producer)
 	log.Printf("[INFO][PRODUCER][CREATE] Create ProducerIdsRecord{producerId: %d, brokerId: %d} = %+v\n", producerId, brokerId, producer)
 
+	fsm.logicalClock++ //incrementing logical time
 	return ApplyRv{
 		MetaData: map[string]any{
 			"status": "SUCCESS",

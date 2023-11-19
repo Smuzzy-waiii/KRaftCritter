@@ -10,9 +10,10 @@ import (
 
 // DistMap impl.  raft.FSM
 type DistMap struct {
-	Brokers   map[int]Broker
-	Topics    Topics
-	Producers []Producer
+	logicalClock int
+	Brokers      map[int]Broker
+	Topics       Topics
+	Producers    []Producer
 }
 
 func (fsm *DistMap) InitIfNotInit() {
