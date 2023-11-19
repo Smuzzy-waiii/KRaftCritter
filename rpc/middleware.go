@@ -90,6 +90,25 @@ func (r RpcInterface) CheckTopicExistsInFSM(c *gin.Context, topicName string, sh
 	}
 }
 
+func (r RpcInterface) CheckPartitionExistsInFSM(c *gin.Context, partitionID int, shouldExist bool) bool {
+	_, prs := r.Fsm.Partitions.PartitionMap[partitionID]
+	if !shouldExist && prs {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "AlreadyExists",
+			"message": fmt.Sprintf("Partition %d already exists", partitionID),
+		})
+		return false
+	} else if shouldExist && !prs {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "PartitionDoesNotExist",
+			"message": fmt.Sprintf("Partition %d does not exist", partitionID),
+		})
+		return false
+	} else {
+		return true
+	}
+}
+
 func CheckParamExists(c *gin.Context, doesNotExist bool, paramName string) bool {
 	if doesNotExist {
 		c.JSON(http.StatusBadRequest, gin.H{

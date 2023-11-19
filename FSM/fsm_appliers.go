@@ -30,6 +30,7 @@ func (fsm *DistMap) ApplyBrokerCreate(l *raft.Log) interface{} {
 
 func (fsm *DistMap) ApplyBrokerDelete(l *raft.Log) interface{} {
 	brokerID, _ := strconv.Atoi(string(l.Data)) //caller ensures valid brokerID
+
 	delete(fsm.Brokers, brokerID)
 	return nil
 }
@@ -67,4 +68,25 @@ func (fsm *DistMap) ApplyTopicCreate(l *raft.Log) interface{} {
 	fsm.Topics.Offset += 1
 
 	return fsm.Topics.Offset
+}
+
+func (fsm *DistMap) ApplyPartitionCreate(l *raft.Log) interface{} {
+
+	newPartition := Partition{}
+	err := helpers.GobDecode[Partition](l.Data, &newPartition)
+	if err != nil {
+		return ApplyRv{
+			MetaData: map[string]any{"status": "ERROR"},
+			Error:    err,
+		}
+	}
+	fsm.Partitions.PartitionMap[newPartition.PartitionID] = newPartition
+
+	return ApplyRv{
+		MetaData: map[string]interface{}{
+			"status":    "SUCCESS",
+			"partition": newPartition,
+		},
+		Error: nil,
+	}
 }
