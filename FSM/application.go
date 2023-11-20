@@ -14,23 +14,23 @@ const MAX_TIME_OFFSET = 25
 // DistMap impl.  raft.FSM
 type DistMap struct {
 	LogicalClock int
-	Brokers      Brokers
-	Topics       Topics
-	Producers    []Producer
-	Partitions   Partitions
+	Brokers
+	Topics
+	Producers []Producer
+	Partitions
 }
 
 func (fsm *DistMap) InitIfNotInit() {
-	if (*fsm).Brokers.BrokerMap == nil {
-		(*fsm).Brokers.BrokerMap = make(map[int]Broker)
+	if (*fsm).BrokerMap == nil {
+		(*fsm).BrokerMap = make(map[int]Broker)
 	}
 
-	if (*fsm).Topics.TopicMap == nil {
-		(*fsm).Topics.TopicMap = make(map[string]Topic)
-		(*fsm).Topics.Offset = 0
+	if (*fsm).TopicMap == nil {
+		(*fsm).TopicMap = make(map[string]Topic)
+		(*fsm).Offset = 0
 	}
-	if (*fsm).Partitions.PartitionMap == nil {
-		(*fsm).Partitions.PartitionMap = make(map[int]Partition)
+	if (*fsm).PartitionMap == nil {
+		(*fsm).PartitionMap = make(map[int]Partition)
 	}
 }
 
