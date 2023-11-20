@@ -21,6 +21,7 @@ func (fsm *DistMap) ApplyBrokerCreate(l *raft.Log) interface{} {
 	broker.internalUUID = uuid.New().String()
 	broker.Epoch = 0
 	broker.LogicalTime = fsm.LogicalClock + 1
+	broker.BrokerStatus = "Active"
 	fsm.Brokers.BrokerMap[broker.BrokerID] = broker
 	log.Printf("[INFO][BROKER][CREATE] Created Broker %+v\n", broker)
 
