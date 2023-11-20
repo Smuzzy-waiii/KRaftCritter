@@ -44,6 +44,8 @@ func (r RpcInterface) CreatePartition(c *gin.Context) {
 	})
 }
 
+// UNUSED COZ REQS CHANGED -_-
+// TODO: Impl. FSM Applier for this
 func (r RpcInterface) RemoveReplica(c *gin.Context) {
 	partitionID := c.Query("partitionID")
 	brokerID := c.Query("brokerID")
@@ -84,6 +86,8 @@ func (r RpcInterface) RemoveReplica(c *gin.Context) {
 	})
 }
 
+// UNUSED COZ REQS CHANGED -_-
+// TODO: Impl. FSM Applier for this
 func (r RpcInterface) AddReplica(c *gin.Context) {
 	partitionID := c.Query("partitionID")
 	replicaID := c.Query("replicaID")
@@ -124,73 +128,3 @@ func (r RpcInterface) AddReplica(c *gin.Context) {
 		"commitIndex": f.Index(),
 	})
 }
-
-////	f:= r.Raft.ApplyLog(raft.Log{Data: [[]byte(partitionID),[]byte(topicUUID),[]byte(replicas)]}), Extensions : []byte("Partition")},time.Second)
-////	if err := f.Error(); !HandleApplyError(c, err) {
-////return
-////
-////}
-//	f := r.Raft.ApplyLog(raft.Log{
-//		Data:       serializePartition(partitionID, topicUUID, replicas),
-//		Extensions: []byte("Partition"),
-//	}, time.Second)
-//
-//	if err := f.Error(); err != nil {
-//		// Handle the error, e.g., log it or return an error response
-//		c.JSON(http.StatusInternalServerError, gin.H{
-//			"status":  "Error",
-//			"message": "Failed to apply log to Raft node",
-//			"error":   err.Error(),
-//		})
-//		return
-//	}
-//offset := f.Response().(int)
-//
-//c.JSON(http.StatusOK, gin.H{
-//"status":      "SUCCESS",
-//"message":     "Partition Created Successfully",
-//"partition":   Partition{PartitionID: partitionID, TopicUUID: topicUUID, Replicas: replicas},
-//"offset":      offset,
-//"commitIndex": f.Index(),
-//})
-//}
-//
-//
-//}
-//////////////////
-//
-//// Y
-//
-//
-
-//func serializePartition(partitionID, topicUUID string, replicas []int) []byte {
-//	// Implement your serialization logic here, e.g., using encoding/json
-//	// For simplicity, assuming a JSON serialization here
-//	partition := Partition{
-//		PartitionID:      // convert partitionID to int,
-//		TopicUUID:        topicUUID,
-//		Replicas:         replicas,
-//		ISR:              []int{},
-//		RemovingReplicas: []int{},
-//		AddingReplicas:   []int{},
-//		Leader:           "",
-//		PartitionEpoch:   0,
-//	}
-//
-//	data, _ := json.Marshal(partition)
-//	return data
-//}
-//
-
-//func parseIntArrayQueryParam(c *gin.Context, param string) []int {
-//	paramValue := c.QueryArray(param)
-//	var result []int
-//	for _, val := range paramValue {
-//		intVal, err := strconv.Atoi(val)
-//		if err == nil {
-//			result = append(result, intVal)
-//		}
-//	}
-//	return result
-//}
-//

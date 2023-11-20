@@ -152,8 +152,10 @@ func (fsm *DistMap) ApplyPartitionCreate(l *raft.Log) interface{} {
 			Error:    err,
 		}
 	}
+	newPartition.LogicalTime = fsm.LogicalClock + 1
 	fsm.Partitions.PartitionMap[newPartition.PartitionID] = newPartition
 
+	fsm.LogicalClock++
 	return ApplyRv{
 		MetaData: map[string]interface{}{
 			"status":    "SUCCESS",

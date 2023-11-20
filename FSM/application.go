@@ -17,7 +17,7 @@ type DistMap struct {
 	Brokers      Brokers
 	Topics       Topics
 	Producers    []Producer
-  Partitions   Partitions
+	Partitions   Partitions
 }
 
 func (fsm *DistMap) InitIfNotInit() {
@@ -78,6 +78,9 @@ func (fsm *DistMap) Snapshot() (raft.FSMSnapshot, error) {
 	topicMapCopy := make(map[string]Topic)
 	helpers.DeepCopyMap(&topicMapCopy, fsm.Topics.TopicMap)
 
+	partitionMapCopy := make(map[int]Partition)
+	helpers.DeepCopyMap(&partitionMapCopy, fsm.Partitions.PartitionMap)
+
 	producerCopy := []Producer{}
 	helpers.DeepCopySlice(&producerCopy, fsm.Producers)
 
@@ -92,6 +95,9 @@ func (fsm *DistMap) Snapshot() (raft.FSMSnapshot, error) {
 			Offset:   fsm.Topics.Offset,
 		},
 		Producers: producerCopy,
+		Partitions: Partitions{
+			PartitionMap: partitionMapCopy,
+		},
 	}, nil
 }
 
@@ -114,6 +120,9 @@ func (fsm *DistMap) Restore(r io.ReadCloser) error {
 			Offset:   restoreSnapshot.Offset,
 		},
 		Producers: restoreSnapshot.Producers,
+		Partitions: Partitions{
+			restoreSnapshot.PartitionMap,
+		},
 	}
 	return nil
 }
@@ -122,6 +131,7 @@ type snapshot struct {
 	LogicalClock int
 	Brokers
 	Topics
+	Partitions
 	Producers []Producer
 }
 

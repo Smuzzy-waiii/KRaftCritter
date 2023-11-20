@@ -30,20 +30,19 @@ func (r RpcInterface) GetClientMetadata(c *gin.Context) {
 }
 
 func (r RpcInterface) GetAllClientMetadata(c *gin.Context) {
-	//TODO: Add Returning Partitions
 	c.JSON(http.StatusOK, gin.H{
 		"status":      "SUCCESS",
 		"logicalTime": r.Fsm.LogicalClock,
 		"brokers":     helpers.Values(r.Fsm.Brokers.BrokerMap),
 		"topics":      helpers.Values(r.Fsm.Topics.TopicMap),
+		"partitions":  helpers.Values(r.Fsm.Partitions.PartitionMap),
 	})
 }
 
 func (r RpcInterface) GetDiffClientMetadata(c *gin.Context, prevLogicalTime int) {
 	brokers := []FSM.Broker{}
 	topics := []FSM.Topic{}
-	//producers := []FSM.Producer{}
-	//TODO: Add Returning Partitions
+	partitions := []FSM.Partition{}
 
 	for _, broker := range r.Fsm.Brokers.BrokerMap {
 		if broker.LogicalTime > prevLogicalTime {
@@ -57,11 +56,11 @@ func (r RpcInterface) GetDiffClientMetadata(c *gin.Context, prevLogicalTime int)
 		}
 	}
 
-	//for _, producer := range r.Fsm.Producers {
-	//	if producer.LogicalTime > prevLogicalTime {
-	//		producers = append(producers, producer)
-	//	}
-	//}
+	for _, partition := range r.Fsm.Partitions.PartitionMap {
+		if partition.LogicalTime > prevLogicalTime {
+			partitions = append(partitions, partition)
+		}
+	}
 
 	deletedBrokers := []FSM.Broker{}
 	for _, broker := range r.Fsm.Brokers.DeletedBrokers {
@@ -80,6 +79,10 @@ func (r RpcInterface) GetDiffClientMetadata(c *gin.Context, prevLogicalTime int)
 		"topics": gin.H{
 			"upserted": topics,
 			"deleted":  []FSM.Topics{},
+		},
+		"partitions": gin.H{
+			"upserted": partitions,
+			"deleted":  []FSM.Partition{},
 		},
 	})
 }
@@ -106,13 +109,13 @@ func (r RpcInterface) GetBrokerMetadata(c *gin.Context) {
 }
 
 func (r RpcInterface) GetAllBrokerMetadata(c *gin.Context) {
-	//TODO: Add Returning Partitions
 	c.JSON(http.StatusOK, gin.H{
 		"status":      "SUCCESS",
 		"logicalTime": r.Fsm.LogicalClock,
 		"brokers":     helpers.Values(r.Fsm.Brokers.BrokerMap),
 		"topics":      helpers.Values(r.Fsm.Topics.TopicMap),
 		"producers":   r.Fsm.Producers,
+		"partitions":  helpers.Values(r.Fsm.Partitions.PartitionMap),
 	})
 }
 
@@ -120,7 +123,7 @@ func (r RpcInterface) GetDiffBrokerMetadata(c *gin.Context, prevLogicalTime int)
 	brokers := []FSM.Broker{}
 	topics := []FSM.Topic{}
 	producers := []FSM.Producer{}
-	//TODO: Add Returning Partitions
+	partitions := []FSM.Partition{}
 
 	for _, broker := range r.Fsm.Brokers.BrokerMap {
 		if broker.LogicalTime > prevLogicalTime {
@@ -137,6 +140,12 @@ func (r RpcInterface) GetDiffBrokerMetadata(c *gin.Context, prevLogicalTime int)
 	for _, producer := range r.Fsm.Producers {
 		if producer.LogicalTime > prevLogicalTime {
 			producers = append(producers, producer)
+		}
+	}
+
+	for _, partition := range r.Fsm.Partitions.PartitionMap {
+		if partition.LogicalTime > prevLogicalTime {
+			partitions = append(partitions, partition)
 		}
 	}
 
@@ -161,6 +170,10 @@ func (r RpcInterface) GetDiffBrokerMetadata(c *gin.Context, prevLogicalTime int)
 		"producers": gin.H{
 			"upserted": producers,
 			"deleted":  []FSM.Producer{},
+		},
+		"partitions": gin.H{
+			"upserted": partitions,
+			"deleted":  []FSM.Partition{},
 		},
 	})
 }

@@ -27,6 +27,7 @@ type Partition struct {
 	AddingReplicas   []int  `json:"addingReplicas"`
 	Leader           string `json:"leader"`
 	PartitionEpoch   int    `json:"partitionEpoch"`
+	LogicalTime      int
 }
 
 type Producer struct {
@@ -49,9 +50,3 @@ type Topics struct {
 type Partitions struct {
 	PartitionMap map[int]Partition
 }
-
-//TODO : partitions request gob encode decode this only
-// same as partition
-//leader id ( instead of leader)
-//topic id (instead of topic uuid)
-//do not include epoch
