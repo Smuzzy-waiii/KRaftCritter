@@ -81,6 +81,7 @@ func main() {
 		router.POST("/topics", rpc.CreateTopic)
 		router.GET("/topics", rpc.GetTopics)
 		router.POST("/producers", rpc.RegisterProducer)
+		router.GET("/clientMetadata", rpc.GetClientMetadata)
 
 		host, httpPort, err := helpers.GetHttpAddrFromGrpcAddr(*grpcAddr)
 		if err != nil {

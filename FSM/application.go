@@ -8,17 +8,19 @@ import (
 	"log"
 )
 
+const MAX_TIME_OFFSET = 25
+
 // DistMap impl.  raft.FSM
 type DistMap struct {
-	logicalClock int
-	Brokers      map[int]Broker
+	LogicalClock int
+	Brokers      Brokers
 	Topics       Topics
 	Producers    []Producer
 }
 
 func (fsm *DistMap) InitIfNotInit() {
-	if (*fsm).Brokers == nil {
-		(*fsm).Brokers = make(map[int]Broker)
+	if (*fsm).Brokers.BrokerMap == nil {
+		(*fsm).Brokers.BrokerMap = make(map[int]Broker)
 	}
 
 	if (*fsm).Topics.TopicMap == nil {
@@ -59,8 +61,8 @@ func (fsm *DistMap) Apply(l *raft.Log) interface{} {
 
 func (fsm *DistMap) Snapshot() (raft.FSMSnapshot, error) {
 	brokerCopy := make(map[int]Broker)
-	for k := range fsm.Brokers {
-		brokerCopy[k] = fsm.Brokers[k]
+	for k := range fsm.Brokers.BrokerMap {
+		brokerCopy[k] = fsm.Brokers.BrokerMap[k]
 	}
 	return &snapshot{
 		brokerCopy,

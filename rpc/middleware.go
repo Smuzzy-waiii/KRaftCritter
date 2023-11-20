@@ -53,7 +53,7 @@ func HandleApplyRvError(c *gin.Context, err error) bool {
 }
 
 func (r RpcInterface) CheckBrokerIdExistsInFSM(c *gin.Context, brokerID int, shouldExist bool) bool {
-	_, prs := r.Fsm.Brokers[brokerID]
+	_, prs := r.Fsm.Brokers.BrokerMap[brokerID]
 	if !shouldExist && prs {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "AlreadyExists",

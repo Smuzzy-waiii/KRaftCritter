@@ -36,6 +36,11 @@ type Producer struct {
 	LogicalTime int
 }
 
+type Brokers struct {
+	BrokerMap      map[int]Broker
+	DeletedBrokers []Broker
+}
+
 type Topics struct {
 	TopicMap map[string]Topic
 	Offset   int
