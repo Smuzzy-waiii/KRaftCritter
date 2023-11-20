@@ -80,6 +80,8 @@ func main() {
 		router.PUT("/brokers", rpc.ReplaceBroker)
 		router.POST("/topics", rpc.CreateTopic)
 		router.POST("/partitions", rpc.CreatePartition)
+		router.POST("/partitions/replicas/add", rpc.AddReplica)
+		router.POST("/partitions/replicas/remove")
 
 		host, httpPort, err := helpers.GetHttpAddrFromGrpcAddr(*grpcAddr)
 		if err != nil {

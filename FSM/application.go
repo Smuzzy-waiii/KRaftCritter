@@ -54,6 +54,8 @@ func (fsm *DistMap) Apply(l *raft.Log) interface{} {
 
 	case "Partition":
 		return fsm.ApplyPartitionCreate(l)
+	case "AddReplica":
+		return fsm.ApplyPartitionAddReplica(l)
 
 	}
 	log.Fatalln("Log type not recognised")

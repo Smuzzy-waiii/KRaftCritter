@@ -81,7 +81,7 @@ func (fsm *DistMap) ApplyPartitionCreate(l *raft.Log) interface{} {
 	newPartition := Partition{
 		TopicUUID: fsm.Topics.TopicMap[topicName].topicUUID,
 	}
-	//idk if there is a difference between setting
+
 	newPartition.PartitionEpoch = 0
 	err := helpers.GobDecode[Partition](l.Data, &newPartition)
 	if err != nil {
@@ -96,6 +96,51 @@ func (fsm *DistMap) ApplyPartitionCreate(l *raft.Log) interface{} {
 		MetaData: map[string]interface{}{
 			"status":    "SUCCESS",
 			"partition": newPartition,
+		},
+		Error: nil,
+	}
+}
+
+func (fsm *DistMap) ApplyPartitionAddReplica(l *raft.Log) interface{} {
+
+	data := l.Data
+	partitionID, _ := strconv.Atoi(string(data[0]))
+	brokerID, _ := strconv.Atoi(string(data[1]))
+
+	// Get the existing partition
+	existingPartition, exists := fsm.Partitions.PartitionMap[partitionID]
+	if !exists {
+		return ApplyRv{
+			MetaData: map[string]interface{}{
+				"status":  "ERROR",
+				"message": "Partition not found",
+			},
+			Error: nil,
+		}
+	}
+
+	for _, isrBrokerID := range existingPartition.ISR {
+		if isrBrokerID == brokerID {
+			return ApplyRv{
+				MetaData: map[string]interface{}{
+					"status":  "ERROR",
+					"message": "Replica already in the In-Sync Replica list",
+				},
+				Error: nil,
+			}
+		}
+	}
+
+	existingPartition.Replicas = append(existingPartition.ISR, brokerID)
+	existingPartition.PartitionEpoch++
+
+	fsm.Partitions.PartitionMap[partitionID] = existingPartition
+
+	return ApplyRv{
+		MetaData: map[string]interface{}{
+			"status":    "SUCCESS",
+			"message":   "Replica added to partition successfully",
+			"partition": existingPartition,
 		},
 		Error: nil,
 	}
