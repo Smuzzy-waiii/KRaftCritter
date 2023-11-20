@@ -13,7 +13,7 @@ import (
 func (r RpcInterface) CreatePartition(c *gin.Context) {
 
 	partition := FSM.Partition{PartitionID: -1}
-	if !BindMiddleware(c, partition) {
+	if !BindMiddleware(c, &partition) {
 		return
 	}
 
