@@ -131,3 +131,34 @@ func (fsm *DistMap) ApplyProducerCreate(l *raft.Log) interface{} {
 		Error: nil,
 	}
 }
+
+func (fsm *DistMap) ApplyPartitionCreate(l *raft.Log) interface{} {
+
+	topicName := string(l.Data)
+	println(l.Data)
+
+	//TODO : get leader uuid from leader
+	//TODO :get topicuuid and leader uuid from partition request
+
+	newPartition := Partition{
+		TopicUUID: fsm.Topics.TopicMap[topicName].topicUUID,
+	}
+	//idk if there is a difference between setting
+	newPartition.PartitionEpoch = 0
+	err := helpers.GobDecode[Partition](l.Data, &newPartition)
+	if err != nil {
+		return ApplyRv{
+			MetaData: map[string]any{"status": "ERROR"},
+			Error:    err,
+		}
+	}
+	fsm.Partitions.PartitionMap[newPartition.PartitionID] = newPartition
+
+	return ApplyRv{
+		MetaData: map[string]interface{}{
+			"status":    "SUCCESS",
+			"partition": newPartition,
+		},
+		Error: nil,
+	}
+}

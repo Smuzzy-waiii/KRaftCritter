@@ -19,14 +19,14 @@ type Topic struct {
 }
 
 type Partition struct {
-	partitionID      int
-	topicUUID        string
-	replicas         []int
-	ISR              []int
-	removingReplicas []int
-	addingReplicas   []int
-	leader           string
-	partitionEpoch   int
+	PartitionID      int    `json:"partitionId"`
+	TopicUUID        string `json:"topicName"`
+	Replicas         []int  `json:"replicas"`
+	ISR              []int  `json:"ISR"`
+	RemovingReplicas []int  `json:"removingReplicas"`
+	AddingReplicas   []int  `json:"addingReplicas"`
+	Leader           string `json:"leader"`
+	PartitionEpoch   int    `json:"partitionEpoch"`
 }
 
 type Producer struct {
@@ -45,3 +45,13 @@ type Topics struct {
 	TopicMap map[string]Topic
 	Offset   int
 }
+
+type Partitions struct {
+	PartitionMap map[int]Partition
+}
+
+//TODO : partitions request gob encode decode this only
+// same as partition
+//leader id ( instead of leader)
+//topic id (instead of topic uuid)
+//do not include epoch

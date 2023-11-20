@@ -81,6 +81,7 @@ func main() {
 		router.POST("/topics", rpc.CreateTopic)
 		router.GET("/topics", rpc.GetTopics)
 		router.POST("/producers", rpc.RegisterProducer)
+    router.POST("/partitions", rpc.CreatePartition)
 		router.GET("/clientMetadata", rpc.GetClientMetadata)
 		router.GET("/brokerMetadata", rpc.GetBrokerMetadata)
 
