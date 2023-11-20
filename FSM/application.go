@@ -27,7 +27,6 @@ func (fsm *DistMap) InitIfNotInit() {
 
 	if (*fsm).TopicMap == nil {
 		(*fsm).TopicMap = make(map[string]Topic)
-		(*fsm).Offset = 0
 	}
 	if (*fsm).PartitionMap == nil {
 		(*fsm).PartitionMap = make(map[int]Partition)
@@ -92,7 +91,6 @@ func (fsm *DistMap) Snapshot() (raft.FSMSnapshot, error) {
 		},
 		Topics: Topics{
 			TopicMap: topicMapCopy,
-			Offset:   fsm.Topics.Offset,
 		},
 		Producers: producerCopy,
 		Partitions: Partitions{
@@ -117,7 +115,6 @@ func (fsm *DistMap) Restore(r io.ReadCloser) error {
 		},
 		Topics: Topics{
 			TopicMap: restoreSnapshot.TopicMap,
-			Offset:   restoreSnapshot.Offset,
 		},
 		Producers: restoreSnapshot.Producers,
 		Partitions: Partitions{

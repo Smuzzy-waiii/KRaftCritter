@@ -84,7 +84,6 @@ func (fsm *DistMap) ApplyTopicCreate(l *raft.Log) interface{} {
 		LogicalTime: fsm.LogicalClock + 1,
 	}
 	fsm.Topics.TopicMap[topicName] = newTopic
-	fsm.Topics.Offset += 1
 	log.Printf("[INFO][TOPIC][CREATE] Create Topic %s", topicName)
 
 	fsm.LogicalClock++
