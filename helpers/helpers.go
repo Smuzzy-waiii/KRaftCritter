@@ -45,3 +45,9 @@ func Values[M ~map[K]V, K comparable, V any](m M) []V {
 	}
 	return r
 }
+
+func DeepCopyMap[M ~map[K]V, K comparable, V any](dest *M, src M) {
+	for k, v := range src {
+		(*dest)[k] = v
+	}
+}

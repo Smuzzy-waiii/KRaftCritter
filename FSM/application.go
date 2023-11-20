@@ -1,6 +1,7 @@
 package FSM
 
 import (
+	"YAKT/helpers"
 	"encoding/gob"
 	"fmt"
 	"github.com/hashicorp/raft"
@@ -60,12 +61,29 @@ func (fsm *DistMap) Apply(l *raft.Log) interface{} {
 }
 
 func (fsm *DistMap) Snapshot() (raft.FSMSnapshot, error) {
-	brokerCopy := make(map[int]Broker)
-	for k := range fsm.Brokers.BrokerMap {
-		brokerCopy[k] = fsm.Brokers.BrokerMap[k]
-	}
+	brokerMapCopy := make(map[int]Broker)
+	helpers.DeepCopyMap(&brokerMapCopy, fsm.Brokers.BrokerMap)
+
+	deletedBrokersCopy := []Broker{}
+	copy(deletedBrokersCopy, fsm.Brokers.DeletedBrokers)
+
+	topicMapCopy := make(map[string]Topic)
+	helpers.DeepCopyMap(&topicMapCopy, fsm.Topics.TopicMap)
+
+	producerCopy := []Producer{}
+	copy(producerCopy, fsm.Producers)
+
 	return &snapshot{
-		brokerCopy,
+		LogicalClock: fsm.LogicalClock,
+		Brokers: Brokers{
+			BrokerMap:      brokerMapCopy,
+			DeletedBrokers: deletedBrokersCopy,
+		},
+		Topics: Topics{
+			TopicMap: topicMapCopy,
+			Offset:   fsm.Topics.Offset,
+		},
+		Producers: producerCopy,
 	}, nil
 }
 
@@ -79,7 +97,10 @@ func (fsm *DistMap) Restore(r io.ReadCloser) error {
 }
 
 type snapshot struct {
-	Brokers map[int]Broker
+	LogicalClock int
+	Brokers      Brokers
+	Topics       Topics
+	Producers    []Producer
 }
 
 func (s *snapshot) Persist(sink raft.SnapshotSink) error {
