@@ -1,6 +1,7 @@
 package FSM
 
 import (
+	"YAKT/helpers"
 	"encoding/gob"
 	"fmt"
 	"github.com/hashicorp/raft"
@@ -8,16 +9,20 @@ import (
 	"log"
 )
 
+const MAX_TIME_OFFSET = 25
+
 // DistMap impl.  raft.FSM
 type DistMap struct {
-	Brokers    map[int]Broker
-	Topics     Topics
-	Partitions Partitions
+	LogicalClock int
+	Brokers      Brokers
+	Topics       Topics
+	Producers    []Producer
+  Partitions   Partitions
 }
 
 func (fsm *DistMap) InitIfNotInit() {
-	if (*fsm).Brokers == nil {
-		(*fsm).Brokers = make(map[int]Broker)
+	if (*fsm).Brokers.BrokerMap == nil {
+		(*fsm).Brokers.BrokerMap = make(map[int]Broker)
 	}
 
 	if (*fsm).Topics.TopicMap == nil {
@@ -55,32 +60,69 @@ func (fsm *DistMap) Apply(l *raft.Log) interface{} {
 	case "Partition":
 		return fsm.ApplyPartitionCreate(l)
 
+	case "Producer":
+		return fsm.ApplyProducerCreate(l)
+
 	}
 	log.Fatalln("Log type not recognised")
 	return ApplyRv{}
 }
 
 func (fsm *DistMap) Snapshot() (raft.FSMSnapshot, error) {
-	brokerCopy := make(map[int]Broker)
-	for k := range fsm.Brokers {
-		brokerCopy[k] = fsm.Brokers[k]
-	}
+	brokerMapCopy := make(map[int]Broker)
+	helpers.DeepCopyMap(&brokerMapCopy, fsm.Brokers.BrokerMap)
+
+	deletedBrokersCopy := []Broker{}
+	helpers.DeepCopySlice(&deletedBrokersCopy, fsm.Brokers.DeletedBrokers)
+
+	topicMapCopy := make(map[string]Topic)
+	helpers.DeepCopyMap(&topicMapCopy, fsm.Topics.TopicMap)
+
+	producerCopy := []Producer{}
+	helpers.DeepCopySlice(&producerCopy, fsm.Producers)
+
 	return &snapshot{
-		brokerCopy,
+		LogicalClock: fsm.LogicalClock,
+		Brokers: Brokers{
+			BrokerMap:      brokerMapCopy,
+			DeletedBrokers: deletedBrokersCopy,
+		},
+		Topics: Topics{
+			TopicMap: topicMapCopy,
+			Offset:   fsm.Topics.Offset,
+		},
+		Producers: producerCopy,
 	}, nil
 }
 
 func (fsm *DistMap) Restore(r io.ReadCloser) error {
+	restoreSnapshot := snapshot{}
 	d := gob.NewDecoder(r)
-	err := d.Decode(&fsm)
+	err := d.Decode(&restoreSnapshot)
 	if err != nil {
 		return err
+	}
+
+	(*fsm) = DistMap{
+		LogicalClock: restoreSnapshot.LogicalClock,
+		Brokers: Brokers{
+			restoreSnapshot.BrokerMap,
+			restoreSnapshot.DeletedBrokers,
+		},
+		Topics: Topics{
+			TopicMap: restoreSnapshot.TopicMap,
+			Offset:   restoreSnapshot.Offset,
+		},
+		Producers: restoreSnapshot.Producers,
 	}
 	return nil
 }
 
 type snapshot struct {
-	Brokers map[int]Broker
+	LogicalClock int
+	Brokers
+	Topics
+	Producers []Producer
 }
 
 func (s *snapshot) Persist(sink raft.SnapshotSink) error {
