@@ -133,18 +133,7 @@ func (fsm *DistMap) ApplyProducerCreate(l *raft.Log) interface{} {
 }
 
 func (fsm *DistMap) ApplyPartitionCreate(l *raft.Log) interface{} {
-
-	topicName := string(l.Data)
-	println(l.Data)
-
-	//TODO : get leader uuid from leader
-	//TODO :get topicuuid and leader uuid from partition request
-
-	newPartition := Partition{
-		TopicUUID: fsm.Topics.TopicMap[topicName].topicUUID,
-	}
-	//idk if there is a difference between setting
-	newPartition.PartitionEpoch = 0
+	newPartition := Partition{}
 	err := helpers.GobDecode[Partition](l.Data, &newPartition)
 	if err != nil {
 		return ApplyRv{
@@ -152,6 +141,13 @@ func (fsm *DistMap) ApplyPartitionCreate(l *raft.Log) interface{} {
 			Error:    err,
 		}
 	}
+	leaderId, _ := strconv.Atoi(newPartition.Leader) //caller ensures leader is valid BrokerId
+
+	//newPartition.TopicUUID from req contains topic name as bound by req
+	newPartition.TopicUUID = fsm.Topics.TopicMap[newPartition.TopicUUID].topicUUID
+	newPartition.Leader = fsm.Brokers.BrokerMap[leaderId].internalUUID
+	newPartition.PartitionEpoch = 0
+
 	newPartition.LogicalTime = fsm.LogicalClock + 1
 	fsm.Partitions.PartitionMap[newPartition.PartitionID] = newPartition
 

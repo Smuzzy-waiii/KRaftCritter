@@ -152,6 +152,17 @@ func HandleTimeAtoiError(c *gin.Context, err error) bool {
 	return true
 }
 
+func HandleGenericAtoiError(c *gin.Context, err error, label string) bool {
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "Invalid" + label,
+			"error":  err,
+		})
+		return false
+	}
+	return true
+}
+
 func CheckAllBrokerFieldsExist(c *gin.Context, broker FSM.Broker) bool {
 	switch "" {
 	case broker.BrokerStatus, broker.BrokerHost, broker.BrokerPort, broker.SecurityProtocol, broker.SecurityProtocol:

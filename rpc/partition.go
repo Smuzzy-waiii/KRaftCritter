@@ -6,17 +6,45 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hashicorp/raft"
 	"net/http"
+	"strconv"
 	"time"
 )
 
 func (r RpcInterface) CreatePartition(c *gin.Context) {
 
-	partition := new(FSM.Partition)
+	partition := FSM.Partition{PartitionID: -1}
 	if !BindMiddleware(c, partition) {
 		return
 	}
 
+	if !CheckParamExists(c, partition.PartitionID == -1, "partitionID") {
+		return
+	}
+
+	if !CheckParamExists(c, partition.Leader == "", "leader") {
+		return
+	}
+
+	if !CheckParamExists(c, partition.TopicUUID == "", "topicName") {
+		return
+	}
+
 	if !r.CheckPartitionExistsInFSM(c, partition.PartitionID, false) {
+		return
+	}
+
+	//partition.TopicUUID contains topicname
+	if !r.CheckTopicExistsInFSM(c, partition.TopicUUID, true) {
+		return
+	}
+
+	//partition.leader container brokerId in string form
+	leaderIdInt, err := strconv.Atoi(partition.Leader)
+	if !HandleGenericAtoiError(c, err, "leader") {
+		return
+	}
+
+	if !r.CheckBrokerIdExistsInFSM(c, leaderIdInt, true) {
 		return
 	}
 
