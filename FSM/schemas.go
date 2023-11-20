@@ -18,7 +18,7 @@ type Topic struct {
 
 type Partition struct {
 	PartitionID      int    `json:"partitionId"`
-	TopicUUID        string `json:"topicId"`
+	TopicUUID        string `json:"topicName"`
 	Replicas         []int  `json:"replicas"`
 	ISR              []int  `json:"ISR"`
 	RemovingReplicas []int  `json:"removingReplicas"`

@@ -10,6 +10,7 @@ import (
 )
 
 func (r RpcInterface) CreatePartition(c *gin.Context) {
+
 	partition := new(FSM.Partition)
 	if !BindMiddleware(c, partition) {
 		return
@@ -19,7 +20,7 @@ func (r RpcInterface) CreatePartition(c *gin.Context) {
 		return
 	}
 
-	serPartition, err := helpers.GobEncode(partition)
+	serPartition, err := helpers.GobEncode(partition) //serialize partition
 	if !HandleEncodingError(c, err) {
 		return
 	}
@@ -45,18 +46,18 @@ func (r RpcInterface) CreatePartition(c *gin.Context) {
 
 func (r RpcInterface) RemoveReplica(c *gin.Context) {
 	partitionID := c.Query("partitionID")
-	replicaID := c.Query("replicaID")
+	brokerID := c.Query("brokerID")
 
-	if partitionID == "" || replicaID == "" {
+	if partitionID == "" || brokerID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "Bad Request",
-			"message": "Both partitionID and replicaID are required parameters",
+			"message": "Both partitionID and/or brokerID isnt given",
 		})
 		return
 	}
 
 	// Use GobEncode to serialize the data
-	encodedData, err := helpers.GobEncode([]string{partitionID, replicaID})
+	encodedData, err := helpers.GobEncode([]string{partitionID, brokerID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"status":  "Error",
@@ -65,7 +66,6 @@ func (r RpcInterface) RemoveReplica(c *gin.Context) {
 		return
 	}
 
-	// Apply the log to Raft node for removing replica
 	f := r.Raft.ApplyLog(raft.Log{
 		Data:       encodedData,
 		Extensions: []byte("RemoveReplica"),
@@ -79,7 +79,7 @@ func (r RpcInterface) RemoveReplica(c *gin.Context) {
 		"status":      "SUCCESS",
 		"message":     "Replica Removed Successfully",
 		"partitionID": partitionID,
-		"replicaID":   replicaID,
+		"brokerID":    brokerID,
 		"commitIndex": f.Index(),
 	})
 }
