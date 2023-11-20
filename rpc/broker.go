@@ -80,7 +80,7 @@ func (r RpcInterface) ReplaceBroker(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":      "SUCCESS",
 		"message":     "Broker Replaced Successfully",
-		"broker":      broker,
+		"broker":      resp.MetaData["broker"],
 		"commitIndex": f.Index(),
 	})
 }
@@ -94,7 +94,7 @@ func (r RpcInterface) DeleteBroker(c *gin.Context) {
 	}
 
 	brokerIdInt, err := strconv.Atoi(brokerId)
-	if !HandleAtoiError(c, err) {
+	if !HandleBrokerIdAtoiError(c, err) {
 		return
 	}
 
@@ -120,8 +120,8 @@ func (r RpcInterface) GetBrokers(c *gin.Context) {
 	brokerId := c.DefaultQuery("brokerID", "")
 	if brokerId == "" {
 		var brokers []FSM.Broker
-		for brokerId := range r.Fsm.Brokers {
-			broker := r.Fsm.Brokers[brokerId]
+		for brokerId := range r.Fsm.Brokers.BrokerMap {
+			broker := r.Fsm.Brokers.BrokerMap[brokerId]
 			brokers = append(brokers, broker)
 		}
 		c.JSON(http.StatusOK, gin.H{
@@ -130,7 +130,7 @@ func (r RpcInterface) GetBrokers(c *gin.Context) {
 		})
 	} else {
 		brokerIdInt, err := strconv.Atoi(brokerId)
-		if !HandleAtoiError(c, err) {
+		if !HandleBrokerIdAtoiError(c, err) {
 			return
 		}
 
@@ -140,15 +140,15 @@ func (r RpcInterface) GetBrokers(c *gin.Context) {
 
 		c.JSON(http.StatusOK, gin.H{
 			"status": "SUCCESS",
-			"broker": r.Fsm.Brokers[brokerIdInt],
+			"broker": r.Fsm.Brokers.BrokerMap[brokerIdInt],
 		})
 	}
 }
 
 func (r RpcInterface) GetAllActiveBrokers(c *gin.Context) {
 	var brokers []FSM.Broker
-	for brokerId := range r.Fsm.Brokers {
-		if broker := r.Fsm.Brokers[brokerId]; broker.BrokerStatus == "Active" {
+	for brokerId := range r.Fsm.Brokers.BrokerMap {
+		if broker := r.Fsm.Brokers.BrokerMap[brokerId]; broker.BrokerStatus == "Active" {
 			brokers = append(brokers, broker)
 		}
 	}

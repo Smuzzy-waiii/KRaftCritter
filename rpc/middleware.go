@@ -53,7 +53,7 @@ func HandleApplyRvError(c *gin.Context, err error) bool {
 }
 
 func (r RpcInterface) CheckBrokerIdExistsInFSM(c *gin.Context, brokerID int, shouldExist bool) bool {
-	_, prs := r.Fsm.Brokers[brokerID]
+	_, prs := r.Fsm.Brokers.BrokerMap[brokerID]
 	if !shouldExist && prs {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "AlreadyExists",
@@ -81,7 +81,7 @@ func (r RpcInterface) CheckTopicExistsInFSM(c *gin.Context, topicName string, sh
 		return false
 	} else if shouldExist && !prs {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status":  "BrokerDoesNotExist",
+			"status":  "TopicDoesNotExist",
 			"message": fmt.Sprintf("Topic %s does not exist", topicName),
 		})
 		return false
@@ -119,10 +119,32 @@ func CheckParamExists(c *gin.Context, doesNotExist bool, paramName string) bool 
 	return true
 }
 
-func HandleAtoiError(c *gin.Context, err error) bool {
+func HandleBrokerIdAtoiError(c *gin.Context, err error) bool {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status": "InvalidBrokerId",
+			"error":  err,
+		})
+		return false
+	}
+	return true
+}
+
+func HandleProducerIdAtoiError(c *gin.Context, err error) bool {
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "InvalidProducerId",
+			"error":  err,
+		})
+		return false
+	}
+	return true
+}
+
+func HandleTimeAtoiError(c *gin.Context, err error) bool {
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status": "InvalidPrevLogicalTime",
 			"error":  err,
 		})
 		return false
