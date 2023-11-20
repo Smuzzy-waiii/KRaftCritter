@@ -72,7 +72,14 @@ func (fsm *DistMap) ApplyTopicCreate(l *raft.Log) interface{} {
 
 func (fsm *DistMap) ApplyPartitionCreate(l *raft.Log) interface{} {
 
+	//TODO : initialize epoch to 0
+	//TODO: get a topic uuid from topidid
+	//TODO : get leader uuid from leader
+	//TODO :get topicuuid and leader uuid from partition request
+
 	newPartition := Partition{}
+	//will be decoding partition request
+	//TODO : create a parition with the respective feilds
 	err := helpers.GobDecode[Partition](l.Data, &newPartition)
 	if err != nil {
 		return ApplyRv{

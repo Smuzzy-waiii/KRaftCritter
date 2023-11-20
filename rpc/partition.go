@@ -125,20 +125,6 @@ func (r RpcInterface) AddReplica(c *gin.Context) {
 	})
 }
 
-//func (r RpcInterface) CreatePartition(c *gin.Context) {
-//	partition := new(FSM.Partition)
-//	if !BindMiddleware(c, partition) {
-//		return
-//	}
-//	partitionID := c.Query("partitionId")
-//	topicUUID := c.Query("topicUUID")
-//	replicas := parseIntArrayQueryParam(c, "replicas")
-//
-//	if !CheckParamExists(c, partitionID == "", "partitionId") ||
-//		!CheckParamExists(c, topicUUID == "", "topicUUID") ||
-//		!CheckParamExists(c, replicas == nil, "replicas") {
-//		return
-//	}
 ////	f:= r.Raft.ApplyLog(raft.Log{Data: [[]byte(partitionID),[]byte(topicUUID),[]byte(replicas)]}), Extensions : []byte("Partition")},time.Second)
 ////	if err := f.Error(); !HandleApplyError(c, err) {
 ////return

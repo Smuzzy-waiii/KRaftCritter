@@ -18,7 +18,7 @@ type Topic struct {
 
 type Partition struct {
 	PartitionID      int    `json:"partitionId"`
-	TopicUUID        string `json:"topicUUID"`
+	TopicUUID        string `json:"topicId"`
 	Replicas         []int  `json:"replicas"`
 	ISR              []int  `json:"ISR"`
 	RemovingReplicas []int  `json:"removingReplicas"`
@@ -41,3 +41,9 @@ type Topics struct {
 type Partitions struct {
 	PartitionMap map[int]Partition
 }
+
+//TODO : partitions request gob encode decode this only
+// same as partition
+//leader id ( instead of leader)
+//topic id (instead of topic uuid)
+//do not include epoch
