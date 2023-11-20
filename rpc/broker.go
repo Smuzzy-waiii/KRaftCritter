@@ -80,7 +80,7 @@ func (r RpcInterface) ReplaceBroker(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":      "SUCCESS",
 		"message":     "Broker Replaced Successfully",
-		"broker":      broker,
+		"broker":      resp.MetaData["broker"],
 		"commitIndex": f.Index(),
 	})
 }

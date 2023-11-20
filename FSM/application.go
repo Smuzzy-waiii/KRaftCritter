@@ -65,13 +65,13 @@ func (fsm *DistMap) Snapshot() (raft.FSMSnapshot, error) {
 	helpers.DeepCopyMap(&brokerMapCopy, fsm.Brokers.BrokerMap)
 
 	deletedBrokersCopy := []Broker{}
-	copy(deletedBrokersCopy, fsm.Brokers.DeletedBrokers)
+	helpers.DeepCopySlice(&deletedBrokersCopy, fsm.Brokers.DeletedBrokers)
 
 	topicMapCopy := make(map[string]Topic)
 	helpers.DeepCopyMap(&topicMapCopy, fsm.Topics.TopicMap)
 
 	producerCopy := []Producer{}
-	copy(producerCopy, fsm.Producers)
+	helpers.DeepCopySlice(&producerCopy, fsm.Producers)
 
 	return &snapshot{
 		LogicalClock: fsm.LogicalClock,
@@ -88,19 +88,33 @@ func (fsm *DistMap) Snapshot() (raft.FSMSnapshot, error) {
 }
 
 func (fsm *DistMap) Restore(r io.ReadCloser) error {
+	restoreSnapshot := snapshot{}
 	d := gob.NewDecoder(r)
-	err := d.Decode(&fsm)
+	err := d.Decode(&restoreSnapshot)
 	if err != nil {
 		return err
+	}
+
+	(*fsm) = DistMap{
+		LogicalClock: restoreSnapshot.LogicalClock,
+		Brokers: Brokers{
+			restoreSnapshot.BrokerMap,
+			restoreSnapshot.DeletedBrokers,
+		},
+		Topics: Topics{
+			TopicMap: restoreSnapshot.TopicMap,
+			Offset:   restoreSnapshot.Offset,
+		},
+		Producers: restoreSnapshot.Producers,
 	}
 	return nil
 }
 
 type snapshot struct {
 	LogicalClock int
-	Brokers      Brokers
-	Topics       Topics
-	Producers    []Producer
+	Brokers
+	Topics
+	Producers []Producer
 }
 
 func (s *snapshot) Persist(sink raft.SnapshotSink) error {

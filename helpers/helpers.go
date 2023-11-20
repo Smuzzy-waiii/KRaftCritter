@@ -51,3 +51,9 @@ func DeepCopyMap[M ~map[K]V, K comparable, V any](dest *M, src M) {
 		(*dest)[k] = v
 	}
 }
+
+func DeepCopySlice[S ~[]T, T any](dest *S, src S) {
+	for _, v := range src {
+		(*dest) = append(*dest, v)
+	}
+}

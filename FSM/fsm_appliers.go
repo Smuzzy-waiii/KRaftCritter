@@ -68,8 +68,8 @@ func (fsm *DistMap) ApplyBrokerReplace(l *raft.Log) interface{} {
 	fsm.LogicalClock++
 	return ApplyRv{
 		MetaData: map[string]any{
-			"status":   "SUCCESS",
-			"brokerID": strconv.Itoa(broker.BrokerID),
+			"status": "SUCCESS",
+			"broker": broker,
 		},
 		Error: nil,
 	}
